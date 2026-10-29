@@ -25,7 +25,7 @@ App ni hanya boleh diakses dari komputer anda sendiri (127.0.0.1). Untuk berhent
 
 ## Masalah?
 
-- Muat turun gagal: kemas kini yt-dlp dengan `.venv/bin/pip install -U yt-dlp` (Windows: `.venv\Scripts\pip install -U yt-dlp`).
+- Muat turun gagal: tekan butang **Kemas Kini** di bawah halaman app, kemudian tutup dan buka semula app. YouTube kerap ubah sistemnya, jadi app perlu dikemas kini sekali-sekala.
 - "ffmpeg tidak dijumpai": pasang ffmpeg (lihat di atas), kemudian buka semula terminal.
 
 Gunakan hanya untuk kandungan yang anda ada hak untuk muat turun.

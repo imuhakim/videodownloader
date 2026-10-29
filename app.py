@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import webbrowser
@@ -10,6 +11,7 @@ import webbrowser
 from flask import Flask, after_this_request, jsonify, render_template, request, send_file
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError
+from yt_dlp.version import __version__ as ENGINE_VERSION
 
 app = Flask(__name__)
 
@@ -61,6 +63,29 @@ def to_mpeg(src: str, dst: str) -> None:
 @app.get("/")
 def index():
     return render_template("index.html")
+
+
+@app.get("/api/version")
+def version():
+    return jsonify(version=ENGINE_VERSION)
+
+
+@app.post("/api/update")
+def update():
+    """Kemas kini enjin muat turun ke versi terbaru."""
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-U", "yt-dlp"],
+            check=True, capture_output=True, timeout=300,
+        )
+        out = subprocess.run(
+            [sys.executable, "-c", "from yt_dlp.version import __version__; print(__version__)"],
+            check=True, capture_output=True, text=True,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return jsonify(error="Kemas kini gagal. Pastikan internet berfungsi dan cuba lagi."), 500
+    new_version = out.stdout.strip()
+    return jsonify(old=ENGINE_VERSION, new=new_version, restart=new_version != ENGINE_VERSION)
 
 
 @app.post("/api/info")

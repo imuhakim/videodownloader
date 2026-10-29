@@ -31,6 +31,9 @@
     #status { margin-top:14px; font-size:.9rem; color:var(--muted); min-height:1.2em; }
     #status.err { color:var(--accent); }
     footer { color:var(--muted); font-size:.8rem; margin-top:16px; text-align:center; }
+    .update { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; }
+    .update button { width:auto; margin:0; padding:8px 14px; background:transparent; color:var(--text); border:1px solid var(--border); font-size:.9rem; }
+    #updateStatus { color:var(--muted); font-size:.85rem; }
   </style>
 </head>
 <body>
@@ -68,6 +71,11 @@
     <button id="btn" type="submit">Muat Turun</button>
     <div id="status"></div>
   </form>
+  <div class="card update">
+    <div id="updateStatus">Versi: ...</div>
+    <button id="updateBtn" type="button">Kemas Kini</button>
+  </div>
+
   <footer>Gunakan hanya untuk kandungan yang anda ada hak untuk muat turun.</footer>
 </main>
 
@@ -111,6 +119,30 @@
       setStatus(err.message, true);
     }
   }
+
+  const updateBtn = document.getElementById('updateBtn');
+  const updateStatus = document.getElementById('updateStatus');
+
+  fetch('/api/version').then(r => r.json()).then(d => {
+    updateStatus.textContent = 'Versi: ' + d.version;
+  }).catch(() => {});
+
+  updateBtn.addEventListener('click', async () => {
+    updateBtn.disabled = true;
+    updateStatus.textContent = 'Sedang kemas kini...';
+    try {
+      const r = await fetch('/api/update', { method: 'POST' });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      updateStatus.textContent = d.restart
+        ? 'Dikemas kini ke versi ' + d.new + '. Tutup dan buka semula app.'
+        : 'Dah versi terbaru (' + d.new + ').';
+    } catch (err) {
+      updateStatus.textContent = err.message;
+    } finally {
+      updateBtn.disabled = false;
+    }
+  });
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
