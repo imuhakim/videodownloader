@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YT Downloader</title>
+  <style>
+    :root { --bg:#f6f7f9; --card:#fff; --text:#1d2129; --muted:#667085; --accent:#e5322d; --border:#dfe3ea; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#111317; --card:#1b1e24; --text:#e8eaed; --muted:#9aa0aa; --border:#2c313a; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+    main { max-width:560px; margin:40px auto; padding:0 16px; }
+    h1 { font-size:1.6rem; margin:0 0 4px; }
+    p.sub { color:var(--muted); margin:0 0 24px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; }
+    label { display:block; font-weight:600; margin:14px 0 6px; font-size:.9rem; }
+    input, select { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:transparent; color:var(--text); font-size:1rem; }
+    .formats { display:flex; gap:8px; }
+    .formats label { flex:1; margin:0; font-weight:500; border:1px solid var(--border); border-radius:8px; padding:10px; text-align:center; cursor:pointer; }
+    .formats input { display:none; }
+    .formats input:checked + span { color:var(--accent); font-weight:700; }
+    .formats label:has(input:checked) { border-color:var(--accent); }
+    button { width:100%; margin-top:20px; padding:12px; border:0; border-radius:8px; background:var(--accent); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:wait; }
+    #preview { display:none; gap:12px; align-items:center; margin-top:16px; }
+    #preview img { width:120px; border-radius:6px; }
+    #preview .t { font-weight:600; }
+    #preview .c { color:var(--muted); font-size:.85rem; }
+    #status { margin-top:14px; font-size:.9rem; color:var(--muted); min-height:1.2em; }
+    #status.err { color:var(--accent); }
+    footer { color:var(--muted); font-size:.8rem; margin-top:16px; text-align:center; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>YT Downloader</h1>
+  <p class="sub">Muat turun video YouTube sebagai MP3, MP4 atau MPEG.</p>
+
+  <form class="card" id="form">
+    <label for="url">Pautan YouTube</label>
+    <input id="url" name="url" type="url" placeholder="https://www.youtube.com/watch?v=..." required>
+
+    <div id="preview">
+      <img id="thumb" alt="">
+      <div><div class="t" id="title"></div><div class="c" id="channel"></div></div>
+    </div>
+
+    <label>Format</label>
+    <div class="formats">
+      <label><input type="radio" name="format" value="mp3"><span>MP3 (audio)</span></label>
+      <label><input type="radio" name="format" value="mp4" checked><span>MP4</span></label>
+      <label><input type="radio" name="format" value="mpeg"><span>MPEG</span></label>
+    </div>
+
+    <div id="qualityWrap">
+      <label for="quality">Kualiti video</label>
+      <select id="quality" name="quality">
+        <option value="best">Terbaik</option>
+        <option value="1080">1080p</option>
+        <option value="720">720p</option>
+        <option value="480">480p</option>
+        <option value="360">360p</option>
+      </select>
+    </div>
+
+    <button id="btn" type="submit">Muat Turun</button>
+    <div id="status"></div>
+  </form>
+  <footer>Gunakan hanya untuk kandungan yang anda ada hak untuk muat turun.</footer>
+</main>
+
+<script>
+  const form = document.getElementById('form');
+  const urlInput = document.getElementById('url');
+  const btn = document.getElementById('btn');
+  const statusEl = document.getElementById('status');
+  const qualityWrap = document.getElementById('qualityWrap');
+
+  function setStatus(msg, err = false) {
+    statusEl.textContent = msg;
+    statusEl.className = err ? 'err' : '';
+  }
+
+  form.addEventListener('change', e => {
+    if (e.target.name === 'format') qualityWrap.style.display = e.target.value === 'mp3' ? 'none' : '';
+  });
+
+  let infoTimer;
+  urlInput.addEventListener('input', () => {
+    clearTimeout(infoTimer);
+    infoTimer = setTimeout(loadInfo, 600);
+  });
+
+  async function loadInfo() {
+    const url = urlInput.value.trim();
+    const preview = document.getElementById('preview');
+    if (!url) { preview.style.display = 'none'; return; }
+    try {
+      const r = await fetch('/api/info', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      document.getElementById('thumb').src = d.thumbnail || '';
+      document.getElementById('title').textContent = d.title;
+      document.getElementById('channel').textContent = d.channel || '';
+      preview.style.display = 'flex';
+      setStatus('');
+    } catch (err) {
+      preview.style.display = 'none';
+      setStatus(err.message, true);
+    }
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    btn.disabled = true;
+    setStatus('Sedang memproses... (video panjang atau format MPEG mungkin ambil masa)');
+    try {
+      const r = await fetch('/api/download', { method: 'POST', body: new FormData(form) });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d.error || 'Muat turun gagal.');
+      }
+      const blob = await r.blob();
+      const cd = r.headers.get('Content-Disposition') || '';
+      const m = cd.match(/filename\*=UTF-8''([^;]+)/) || cd.match(/filename="?([^";]+)"?/);
+      const name = m ? decodeURIComponent(m[1]) : 'download';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      setStatus('Siap! ' + name);
+    } catch (err) {
+      setStatus(err.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
