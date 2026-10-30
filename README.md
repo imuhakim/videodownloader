@@ -1,6 +1,6 @@
-# YT Downloader
+# Video Downloader
 
-App ringkas yang berjalan di komputer anda sendiri untuk muat turun video YouTube dalam format **MP3**, **MP4** atau **MPEG**.
+App ringkas yang berjalan di komputer anda sendiri untuk muat turun video **YouTube** dan **Facebook** dalam format **MP3**, **MP4** atau **MPEG**.
 
 - **MP3**: audio sahaja, 192 kbps
 - **MP4**: video + audio, pilih kualiti (Terbaik / 1080p / 720p / 480p / 360p)
@@ -19,13 +19,15 @@ App ringkas yang berjalan di komputer anda sendiri untuk muat turun video YouTub
 - **Windows**: klik dua kali `run.bat`
 - **macOS / Linux**: jalankan `./run.sh` dalam Terminal
 
-Kali pertama ia akan pasang pakej yang diperlukan. Lepas tu browser akan buka http://127.0.0.1:5000 secara automatik. Tampal pautan YouTube, pilih format dan tekan **Muat Turun**.
+Kali pertama ia akan pasang pakej yang diperlukan. Lepas tu browser akan buka http://127.0.0.1:5000 secara automatik. Tampal pautan YouTube atau Facebook, pilih format dan tekan **Muat Turun**.
 
 App ni hanya boleh diakses dari komputer anda sendiri (127.0.0.1). Untuk berhenti, tutup tetingkap terminal atau tekan Ctrl+C.
 
 ## Masalah?
 
-- Muat turun gagal: tekan butang **Kemas Kini** di bawah halaman app, kemudian tutup dan buka semula app. YouTube kerap ubah sistemnya, jadi app perlu dikemas kini sekali-sekala.
+- Video Facebook: hanya video **awam (public)** boleh dimuat turun. Video private atau dari group tertutup tidak disokong.
+
+- Muat turun gagal: tekan butang **Kemas Kini** di bawah halaman app, kemudian tutup dan buka semula app. YouTube dan Facebook kerap ubah sistem mereka, jadi app perlu dikemas kini sekali-sekala.
 - "ffmpeg tidak dijumpai": pasang ffmpeg (lihat di atas), kemudian buka semula terminal.
 
 Gunakan hanya untuk kandungan yang anda ada hak untuk muat turun.

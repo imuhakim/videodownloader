@@ -1,4 +1,4 @@
-"""YT Downloader - muat turun video YouTube sebagai MP3, MP4 atau MPEG."""
+"""Video Downloader - muat turun video YouTube dan Facebook sebagai MP3, MP4 atau MPEG."""
 import os
 import re
 import shutil
@@ -7,6 +7,7 @@ import sys
 import tempfile
 import threading
 import webbrowser
+from urllib.parse import urlparse
 
 from flask import Flask, after_this_request, jsonify, render_template, request, send_file
 from yt_dlp import YoutubeDL
@@ -17,7 +18,22 @@ app = Flask(__name__)
 
 FORMATS = {"mp3", "mp4", "mpeg"}
 MP4_QUALITIES = {"best", "1080", "720", "480", "360"}
-YOUTUBE_RE = re.compile(r"^(https?://)?(www\.|m\.|music\.)?(youtube\.com|youtu\.be)/", re.I)
+SUPPORTED_HOSTS = (
+    "youtube.com", "youtu.be",                     # YouTube
+    "facebook.com", "fb.watch", "fb.com", "fb.gg",  # Facebook
+)
+INVALID_URL = "Sila masukkan pautan YouTube atau Facebook yang sah."
+
+
+def is_supported_url(url: str) -> bool:
+    if not re.match(r"^https?://", url, re.I):
+        url = "https://" + url
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return False
+    host = (parsed.hostname or "").lower()
+    return any(host == h or host.endswith("." + h) for h in SUPPORTED_HOSTS)
 
 
 def safe_name(title: str) -> str:
@@ -91,8 +107,8 @@ def update():
 @app.post("/api/info")
 def info():
     url = (request.json or {}).get("url", "").strip()
-    if not YOUTUBE_RE.match(url):
-        return jsonify(error="Sila masukkan pautan YouTube yang sah."), 400
+    if not is_supported_url(url):
+        return jsonify(error=INVALID_URL), 400
     try:
         with YoutubeDL({"quiet": True, "noplaylist": True, "skip_download": True}) as ydl:
             data = ydl.extract_info(url, download=False)
@@ -112,8 +128,8 @@ def download():
     fmt = request.form.get("format", "mp4").lower()
     quality = request.form.get("quality", "best")
 
-    if not YOUTUBE_RE.match(url):
-        return jsonify(error="Sila masukkan pautan YouTube yang sah."), 400
+    if not is_supported_url(url):
+        return jsonify(error=INVALID_URL), 400
     if fmt not in FORMATS:
         return jsonify(error="Format tidak disokong."), 400
     if quality not in MP4_QUALITIES:
@@ -163,6 +179,6 @@ if __name__ == "__main__":
     url = f"http://127.0.0.1:{port}"
     if not shutil.which("ffmpeg"):
         print("AMARAN: ffmpeg tidak dijumpai. MP3 dan MPEG perlukan ffmpeg.")
-    print(f"YT Downloader berjalan di {url}  (tekan Ctrl+C untuk berhenti)")
+    print(f"Video Downloader berjalan di {url}  (tekan Ctrl+C untuk berhenti)")
     threading.Timer(1.0, lambda: webbrowser.open(url)).start()
     app.run(host="127.0.0.1", port=port, debug=False)

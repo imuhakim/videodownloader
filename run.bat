@@ -1,5 +1,5 @@
 @echo off
-rem Jalankan YT Downloader (Windows)
+rem Jalankan Video Downloader (Windows)
 cd /d "%~dp0"
 if not exist .venv (
   python -m venv .venv
