@@ -26,6 +26,8 @@ SUPPORTED_HOSTS = (
 )
 INVALID_URL = "Sila masukkan pautan YouTube, Facebook atau TikTok yang sah."
 DRIVE_SUBFOLDER = "Video Downloader"
+# Pilih nama fail dan pindah dalam satu langkah, supaya dua muat turun serentak tidak tulis ganti fail yang sama.
+DRIVE_LOCK = threading.Lock()
 
 
 def is_supported_url(url: str) -> bool:
@@ -211,7 +213,8 @@ def download():
         folder = os.path.join(root, DRIVE_SUBFOLDER)
         try:
             os.makedirs(folder, exist_ok=True)
-            saved = shutil.move(path, unique_path(folder, filename))
+            with DRIVE_LOCK:
+                saved = shutil.move(path, unique_path(folder, filename))
         except OSError:
             return jsonify(error="Gagal simpan ke Google Drive. Semak ruang storan Google Drive anda."), 500
         return jsonify(saved=os.path.basename(saved), folder=folder)
