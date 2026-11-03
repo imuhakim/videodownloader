@@ -34,16 +34,18 @@
     .update { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; }
     .update button { width:auto; margin:0; padding:8px 14px; background:transparent; color:var(--text); border:1px solid var(--border); font-size:.9rem; }
     #updateStatus { color:var(--muted); font-size:.85rem; }
+    .formats label.disabled { opacity:.5; cursor:not-allowed; }
+    #driveHint { color:var(--muted); font-size:.8rem; margin-top:6px; }
   </style>
 </head>
 <body>
 <main>
   <h1>Video Downloader</h1>
-  <p class="sub">Muat turun video YouTube dan Facebook sebagai MP3, MP4 atau MPEG.</p>
+  <p class="sub">Muat turun video YouTube, Facebook dan TikTok sebagai MP3, MP4 atau MPEG.</p>
 
   <form class="card" id="form">
-    <label for="url">Pautan YouTube atau Facebook</label>
-    <input id="url" name="url" type="url" placeholder="https://www.youtube.com/watch?v=... atau https://www.facebook.com/..." required>
+    <label for="url">Pautan YouTube, Facebook atau TikTok</label>
+    <input id="url" name="url" type="url" placeholder="Tampal link YouTube, Facebook atau TikTok di sini" required>
 
     <div id="preview">
       <img id="thumb" alt="">
@@ -67,6 +69,13 @@
         <option value="360">360p</option>
       </select>
     </div>
+
+    <label>Simpan ke</label>
+    <div class="formats">
+      <label><input type="radio" name="dest" value="pc" checked><span>Komputer</span></label>
+      <label id="driveOpt" class="disabled"><input type="radio" name="dest" value="drive" disabled><span>Google Drive</span></label>
+    </div>
+    <div id="driveHint">Menyemak Google Drive...</div>
 
     <button id="btn" type="submit">Muat Turun</button>
     <div id="status"></div>
@@ -123,6 +132,17 @@
   const updateBtn = document.getElementById('updateBtn');
   const updateStatus = document.getElementById('updateStatus');
 
+  fetch('/api/drive').then(r => r.json()).then(d => {
+    const hint = document.getElementById('driveHint');
+    if (d.available) {
+      document.getElementById('driveOpt').classList.remove('disabled');
+      document.querySelector('input[name=dest][value=drive]').disabled = false;
+      hint.textContent = 'Fail Google Drive akan disimpan dalam: ' + d.folder;
+    } else {
+      hint.textContent = 'Google Drive tidak dijumpai. Pasang "Google Drive untuk desktop" untuk guna pilihan ini.';
+    }
+  }).catch(() => {});
+
   fetch('/api/version').then(r => r.json()).then(d => {
     updateStatus.textContent = 'Versi: ' + d.version;
   }).catch(() => {});
@@ -153,6 +173,11 @@
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
         throw new Error(d.error || 'Muat turun gagal.');
+      }
+      if (form.dest.value === 'drive') {
+        const d = await r.json();
+        setStatus('Siap! Disimpan ke Google Drive: ' + d.saved);
+        return;
       }
       const blob = await r.blob();
       const cd = r.headers.get('Content-Disposition') || '';

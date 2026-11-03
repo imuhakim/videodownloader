@@ -1,6 +1,6 @@
 # Video Downloader
 
-App ringkas yang berjalan di komputer anda sendiri untuk muat turun video **YouTube** dan **Facebook** dalam format **MP3**, **MP4** atau **MPEG**.
+App ringkas yang berjalan di komputer anda sendiri untuk muat turun video **YouTube**, **Facebook** dan **TikTok** dalam format **MP3**, **MP4** atau **MPEG**.
 
 | Format | Hasil |
 |---|---|
@@ -65,17 +65,42 @@ Jika keluar `is not recognized`, ulang langkah pemasangan untuk program tersebut
 
 ### Langkah 6: Muat turun video
 
-1. Salin link video dari YouTube atau Facebook (butang **Share**, kemudian **Copy link**).
-2. Tampal link dalam kotak **Pautan YouTube atau Facebook**. Tajuk dan gambar video akan muncul.
+1. Salin link video dari YouTube, Facebook atau TikTok (butang **Share**, kemudian **Copy link**).
+2. Tampal link dalam kotak **Pautan YouTube, Facebook atau TikTok**. Tajuk dan gambar video akan muncul.
 3. Pilih format: **MP3**, **MP4** atau **MPEG**. Untuk MP4/MPEG, pilih juga kualiti video.
-4. Klik **Muat Turun**, kemudian tunggu. Video panjang atau format MPEG mengambil masa lebih lama.
-5. Fail akan disimpan dalam folder **Downloads**.
+4. Pilih **Simpan ke**:
+   - **Komputer**: fail masuk ke folder **Downloads**.
+   - **Google Drive**: fail terus masuk ke Google Drive, dalam folder **Video Downloader**. Lihat bahagian [Simpan terus ke Google Drive](#simpan-terus-ke-google-drive) untuk setup sekali sahaja.
+5. Klik **Muat Turun**, kemudian tunggu. Video panjang atau format MPEG mengambil masa lebih lama.
 
 ### Langkah 7: Tutup app
 
 Pergi ke tetingkap hitam, kemudian tekan **Ctrl + C** atau klik **X** untuk menutupnya.
 
 Untuk guna semula lain kali, ulang **Langkah 5** sahaja.
+
+---
+
+## Simpan terus ke Google Drive
+
+Sesuai jika storan PC dah penuh. Fail disimpan ke Google Drive, bukan ke folder Downloads.
+
+### Setup (sekali sahaja)
+
+1. Muat turun **Google Drive untuk desktop**: https://www.google.com/drive/download/
+2. Pasang, kemudian log masuk dengan akaun Google anda.
+3. Klik ikon Google Drive di taskbar (penjuru kanan bawah, berhampiran jam), kemudian **⚙️ (Settings)**, kemudian **Preferences**.
+4. Di bahagian **Google Drive**, pilih **Stream files** (BUKAN "Mirror files").
+   Dengan "Stream files", fail disimpan di awan sahaja dan tidak memenuhkan storan PC.
+5. Tutup app Video Downloader (jika sedang berjalan) dan buka semula (Langkah 5).
+
+Jika berjaya, pilihan **Google Drive** di bawah **Simpan ke** boleh ditekan, dan app akan tunjuk lokasi folder (contoh `G:\My Drive\Video Downloader`).
+
+### Nota
+
+- Semasa proses, video disimpan **sementara** di PC, kemudian dipindahkan ke Google Drive. Pastikan ada sedikit ruang kosong untuk satu video (contoh 100–500 MB).
+- Google Drive akan upload fail di latar belakang. Pastikan internet berfungsi dan jangan matikan PC sehingga upload siap (lihat ikon Google Drive di taskbar).
+- Storan percuma Google Drive ialah 15 GB.
 
 ---
 
@@ -99,7 +124,8 @@ Untuk guna semula lain kali, ulang **Langkah 5** sahaja.
 | `ffmpeg tidak dijumpai` | Ulang Langkah 2, kemudian tutup tetingkap hitam dan buka semula app. |
 | Browser papar app lain / "Address already in use" | Ada app lain sedang guna port 5000. Tutup app lain itu (cari tetingkap hitamnya, atau Task Manager, kemudian **Python**, kemudian **End task**). |
 | "This site can't be reached" | App belum berjalan. Klik dua kali `run.bat` dan jangan tutup tetingkap hitam. |
-| Video Facebook gagal | Hanya video **awam (public)** disokong. Video private atau dari group tertutup tidak boleh dimuat turun. |
+| Video Facebook atau TikTok gagal | Hanya video **awam (public)** disokong. Video private, dari group tertutup, atau akaun private tidak boleh dimuat turun. |
+| Pilihan **Google Drive** tidak boleh ditekan | Google Drive untuk desktop belum dipasang atau belum log masuk. Ikut bahagian [Simpan terus ke Google Drive](#simpan-terus-ke-google-drive), kemudian buka semula app. |
 | Muat turun gagal | Tekan butang **Kemas Kini** (lihat bahagian Kemas kini). |
 
 ---

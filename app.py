@@ -1,4 +1,5 @@
-"""Video Downloader - muat turun video YouTube dan Facebook sebagai MP3, MP4 atau MPEG."""
+"""Video Downloader - muat turun video YouTube, Facebook dan TikTok sebagai MP3, MP4 atau MPEG."""
+import glob
 import os
 import re
 import shutil
@@ -7,9 +8,9 @@ import sys
 import tempfile
 import threading
 import webbrowser
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
-from flask import Flask, after_this_request, jsonify, render_template, request, send_file
+from flask import Flask, Response, after_this_request, jsonify, render_template, request
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError
 from yt_dlp.version import __version__ as ENGINE_VERSION
@@ -21,8 +22,10 @@ MP4_QUALITIES = {"best", "1080", "720", "480", "360"}
 SUPPORTED_HOSTS = (
     "youtube.com", "youtu.be",                     # YouTube
     "facebook.com", "fb.watch", "fb.com", "fb.gg",  # Facebook
+    "tiktok.com",                                   # TikTok (termasuk vm. dan vt.)
 )
-INVALID_URL = "Sila masukkan pautan YouTube atau Facebook yang sah."
+INVALID_URL = "Sila masukkan pautan YouTube, Facebook atau TikTok yang sah."
+DRIVE_SUBFOLDER = "Video Downloader"
 
 
 def is_supported_url(url: str) -> bool:
@@ -34,6 +37,33 @@ def is_supported_url(url: str) -> bool:
         return False
     host = (parsed.hostname or "").lower()
     return any(host == h or host.endswith("." + h) for h in SUPPORTED_HOSTS)
+
+
+def find_drive_root():
+    """Cari folder "My Drive" dari Google Drive untuk desktop. Pulangkan None jika tiada."""
+    override = os.environ.get("GDRIVE_DIR")
+    if override:
+        return override if os.path.isdir(override) else None
+    names = ("My Drive", "Drive Saya")
+    candidates = []
+    if os.name == "nt":
+        for letter in "GHIJKLMNOPQRSTUVWXYZDEF":
+            candidates += [f"{letter}:\\{n}" for n in names]
+    else:
+        home = os.path.expanduser("~")
+        for base in glob.glob(os.path.join(home, "Library", "CloudStorage", "GoogleDrive-*")):
+            candidates += [os.path.join(base, n) for n in names]
+        candidates += [os.path.join(home, "Google Drive", n) for n in names]
+    return next((c for c in candidates if os.path.isdir(c)), None)
+
+
+def unique_path(folder: str, filename: str) -> str:
+    stem, ext = os.path.splitext(filename)
+    path, n = os.path.join(folder, filename), 2
+    while os.path.exists(path):
+        path = os.path.join(folder, f"{stem} ({n}){ext}")
+        n += 1
+    return path
 
 
 def safe_name(title: str) -> str:
@@ -86,6 +116,12 @@ def version():
     return jsonify(version=ENGINE_VERSION)
 
 
+@app.get("/api/drive")
+def drive():
+    root = find_drive_root()
+    return jsonify(available=bool(root), folder=os.path.join(root, DRIVE_SUBFOLDER) if root else None)
+
+
 @app.post("/api/update")
 def update():
     """Kemas kini enjin muat turun ke versi terbaru."""
@@ -127,6 +163,7 @@ def download():
     url = request.form.get("url", "").strip()
     fmt = request.form.get("format", "mp4").lower()
     quality = request.form.get("quality", "best")
+    dest = request.form.get("dest", "pc")
 
     if not is_supported_url(url):
         return jsonify(error=INVALID_URL), 400
@@ -165,13 +202,36 @@ def download():
     if not os.path.exists(path):
         return jsonify(error="Fail output tidak dijumpai."), 500
 
+    filename = f"{safe_name(data.get('title', vid))}.{fmt}"
+
+    if dest == "drive":
+        root = find_drive_root()
+        if not root:
+            return jsonify(error="Google Drive tidak dijumpai. Pastikan Google Drive untuk desktop dipasang dan log masuk."), 400
+        folder = os.path.join(root, DRIVE_SUBFOLDER)
+        try:
+            os.makedirs(folder, exist_ok=True)
+            saved = shutil.move(path, unique_path(folder, filename))
+        except OSError:
+            return jsonify(error="Gagal simpan ke Google Drive. Semak ruang storan Google Drive anda."), 500
+        return jsonify(saved=os.path.basename(saved), folder=folder)
+
+    def stream():
+        # Padam folder sementara selepas fail habis dihantar, supaya tidak memenuhkan storan PC.
+        try:
+            with open(path, "rb") as f:
+                while chunk := f.read(1024 * 1024):
+                    yield chunk
+        finally:
+            shutil.rmtree(workdir, ignore_errors=True)
+
     mimetypes = {"mp3": "audio/mpeg", "mp4": "video/mp4", "mpeg": "video/mpeg"}
-    return send_file(
-        path,
-        mimetype=mimetypes[fmt],
-        as_attachment=True,
-        download_name=f"{safe_name(data.get('title', vid))}.{fmt}",
-    )
+    ascii_stem = os.path.splitext(filename)[0].encode("ascii", "ignore").decode().strip()
+    ascii_name = f"{ascii_stem or 'video'}.{fmt}"
+    return Response(stream(), mimetype=mimetypes[fmt], headers={
+        "Content-Length": str(os.path.getsize(path)),
+        "Content-Disposition": f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(filename)}",
+    })
 
 
 if __name__ == "__main__":
