@@ -169,12 +169,14 @@
     btn.disabled = true;
     setStatus('Sedang memproses... (video panjang atau format MPEG mungkin ambil masa)');
     try {
-      const r = await fetch('/api/download', { method: 'POST', body: new FormData(form) });
+      const data = new FormData(form);
+      const dest = data.get('dest');
+      const r = await fetch('/api/download', { method: 'POST', body: data });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
         throw new Error(d.error || 'Muat turun gagal.');
       }
-      if (form.dest.value === 'drive') {
+      if (dest === 'drive') {
         const d = await r.json();
         setStatus('Siap! Disimpan ke Google Drive: ' + d.saved);
         return;
